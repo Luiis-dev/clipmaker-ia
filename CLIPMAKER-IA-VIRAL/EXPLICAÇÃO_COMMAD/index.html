@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ClipMaker | Sua IA Viral</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://upload-widget.cloudinary.com/latest/global/all.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet" />
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #020617; /* Cor de fundo "dark" profunda */
+            color: #f8fafc;
+            overflow-x: hidden; /* Evita barra de rolagem horizontal indesejada */
+        }
+
+        /* BLOB: Aquelas manchas coloridas e desfocadas no fundo (efeito Glassmorphism) */
+        .blob {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: linear-gradient(180deg, rgba(37, 99, 235, 0.2) 0%, rgba(79, 70, 229, 0.2) 100%);
+            filter: blur(80px); /* O segredo do desfoque */
+            border-radius: 50%;
+            z-index: -1; /* Fica atrás de tudo */
+            animation: move 20s infinite alternate; /* Animação infinita */
+        }
+
+        @keyframes move {
+            from { transform: translate(-10%, -10%) scale(1); }
+            to { transform: translate(20%, 20%) scale(1.2); }
+        }
+
+        /* GLASS-CARD: Efeito de vidro transparente com desfoque de fundo */
+        .glass-card {
+            background: rgba(15, 23, 42, 0.3);
+            backdrop-filter: blur(20px); /* Desfoca o que estiver atrás do card */
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        /* BTN-GRADIENT: Botão moderno com gradiente e efeito de levitação no hover */
+        .btn-gradient {
+            background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+            transition: all 0.3s ease;
+        }
+
+        .btn-gradient:hover {
+            transform: translateY(-3px) scale(1.02); /* Sobe um pouco e cresce levemente */
+            box-shadow: 0 20px 40px -10px rgba(59, 130, 246, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="blob" style="top: -10%; left: -10%;"></div>
+    <div class="blob" style="bottom: -10%; right: -10%; animation-delay: -5s;"></div>
+
+    <div class="min-h-screen flex flex-col items-center justify-center p-6">
+        <header class="mb-12 text-center hero-text">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-widest mb-4">
+                <i data-lucide="sparkles" class="w-3 h-3"></i> Powered by Gemini 1.5
+            </div>
+            <h1 class="text-6xl font-extrabold tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-400">
+                ClipMaker<span class="text-blue-500">.</span>
+            </h1>
+            <p class="text-slate-400 text-lg max-w-md mx-auto">
+                Transforme vídeos longos em cortes virais com inteligência artificial em segundos.
+            </p>
+        </header>
+
+        <div class="w-full max-w-4xl glass-card rounded-[2.5rem] p-8 md:p-12 relative overflow-hidden main-card">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                
+                <div class="space-y-8">
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-slate-300 ml-1">Sua Chave Mestra</label>
+                        <div class="relative group">
+                            <i data-lucide="key" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-blue-500 transition-colors"></i>
+                            <input id="api-key" type="password" 
+                                class="w-full bg-slate-950/50 border border-slate-800 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-slate-200" 
+                                placeholder="Insira sua Gemini API Key...">
+                        </div>
+                    </div>
+
+                    <button id="upload-widget" class="btn-gradient w-full py-6 rounded-2xl font-extrabold text-xl flex items-center justify-center gap-3 group">
+                        <i data-lucide="clapperboard" class="group-hover:rotate-12 transition-transform"></i>
+                        Escolher Vídeo
+                    </button>
+
+                    <div id="status-container" class="hidden space-y-4">
+                        <div class="flex items-center gap-3 p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl">
+                            <div class="relative">
+                                <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                <div class="absolute inset-0 w-3 h-3 bg-blue-500 rounded-full animate-ping"></div>
+                            </div>
+                            <span id="loading-text" class="text-sm font-medium text-blue-100">Processando...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="relative group">
+                    <div class="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-[2rem] blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+                    
+                    <div class="relative aspect-[9/16] md:aspect-video bg-slate-950 rounded-[1.8rem] border border-slate-800 overflow-hidden flex items-center justify-center shadow-2xl">
+                        <div id="placeholder" class="text-center p-6">
+                            <div class="w-20 h-20 bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-800">
+                                <i data-lucide="play" class="w-8 h-8 text-slate-700"></i>
+                            </div>
+                            <p class="text-slate-500 text-sm font-bold uppercase tracking-tighter">Aguardando Mídia</p>
+                        </div>
+
+                        <video id="video" class="hidden w-full h-full object-cover" controls></video>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="error" class="fixed bottom-8 px-6 py-4 bg-red-500 text-white rounded-2xl shadow-2xl translate-y-24 transition-transform duration-500 flex items-center gap-3">
+            <i data-lucide="alert-circle"></i>
+            <span id="error-message" class="font-bold"></span>
+        </div>
+    </div>
+
+    <script>
+        // Inicializa os ícones da Lucide
+        lucide.createIcons();
+
+        // GSAP: Animação de entrada "suave" dos elementos ao carregar a página
+        gsap.from(".hero-text", { opacity: 0, y: 30, duration: 1, ease: "power4.out" });
+        gsap.from(".main-card", { opacity: 0, scale: 0.95, duration: 1.2, delay: 0.2, ease: "power4.out" });
+
+        // Seleção de elementos do DOM (HTML) simplificada em um objeto
+        const el = {
+            apiKey: document.getElementById("api-key"),
+            uploadBtn: document.getElementById("upload-widget"),
+            video: document.getElementById("video"),
+            placeholder: document.getElementById("placeholder"),
+            status: document.getElementById("status-container"),
+            loadingText: document.getElementById("loading-text"),
+            error: document.getElementById("error"),
+            errorMessage: document.getElementById("error-message")
+        };
+
+        // Lógica da Aplicação
+        const app = {
+            cloudName: "dhgdmbhtj", // Seu ID no Cloudinary
+            uploadPreset: "upload_video", // Configuração de upload no Cloudinary
+            public_id: "",
+
+            // Função para exibir erros com animação
+            showError(msg) {
+                el.errorMessage.innerText = msg;
+                el.error.classList.remove("translate-y-24"); // Faz o erro subir
+                setTimeout(() => el.error.classList.add("translate-y-24"), 4000); // Esconde após 4s
+            },
+
+            // Função Assíncrona: Espera o Cloudinary gerar o arquivo de texto (transcrição) do vídeo
+            async waitForTranscription() {
+                const maxAttempts = 20;
+                for (let i = 0; i < maxAttempts; i++) {
+                    // O Cloudinary gera a transcrição com a extensão .transcript
+                    const url = `https://res.cloudinary.com/${this.cloudName}/raw/upload/v${Date.now()}/${this.public_id}.transcript`;
+                    try {
+                        const res = await fetch(url);
+                        if (res.ok) return url; // Se o arquivo existe, retorna a URL
+                    } catch (e) {}
+                    await new Promise(r => setTimeout(r, 3000)); // Espera 3 segundos antes de tentar de novo
+                }
+                throw new Error("A transcrição demorou demais. Tente um vídeo menor!");
+            }
+        };
+
+        // Configuração do Widget de Upload do Cloudinary
+        const myWidget = cloudinary.createUploadWidget({
+            cloudName: app.cloudName,
+            uploadPreset: app.uploadPreset,
+            theme: 'minimal',
+            styles: {
+                palette: {
+                    window: "#020617",
+                    sourceList: "#020617",
+                    activeTab: "#3b82f6",
+                    action: "#3b82f6",
+                    inactiveTabIcon: "#64748b",
+                    menuIcons: "#64748b",
+                    link: "#3b82f6",
+                    textDark: "#f8fafc",
+                    textLight: "#f8fafc",
+                    mainShadow: "#000000",
+                    background: "#020617",
+                }
+            }
+        }, async (error, result) => {
+            // Callback: O que acontece quando o upload termina
+            if (!error && result && result.event === "success") {
+                app.public_id = result.info.public_id;
+                
+                try {
+                    el.status.classList.remove("hidden");
+                    el.loadingText.innerText = "Criando transcrição...";
+                    
+                    // 1. Aguarda a transcrição ficar pronta
+                    const transcriptUrl = await app.waitForTranscription();
+                    
+                    el.loadingText.innerText = "IA analisando momentos virais...";
+                    
+                    /* ESTUDO: Integração com Gemini
+                       Aqui você enviaria a 'transcriptUrl' para um backend que usa o Gemini.
+                       O Gemini analisaria o texto e retornaria os tempos (ex: de 0 a 15s).
+                    */
+
+                    // 2. Simulação de "Corte Viral": 
+                    // 'so_0' (start offset 0), 'eo_15' (end offset 15).
+                    // O Cloudinary corta o vídeo automaticamente pela URL!
+                    const viralMoment = "so_0,eo_15"; 
+                    const finalUrl = `https://res.cloudinary.com/${app.cloudName}/video/upload/${viralMoment}/${app.public_id}.mp4`;
+
+                    // 3. Atualiza a interface para mostrar o vídeo
+                    el.placeholder.classList.add("hidden");
+                    el.video.src = finalUrl;
+                    el.video.classList.remove("hidden");
+                    
+                    // Animação de surgimento do vídeo
+                    gsap.from(el.video, { opacity: 0, scale: 1.1, duration: 1 });
+                    
+                } catch (e) {
+                    app.showError(e.message);
+                } finally {
+                    el.status.classList.add("hidden");
+                }
+            }
+        });
+
+        // Evento do botão de upload
+        el.uploadBtn.addEventListener("click", () => {
+            // Validação simples: se não tiver chave, não abre o upload
+            if (!el.apiKey.value) {
+                app.showError("Ei! Cadê sua API Key?");
+                el.apiKey.focus();
+                return;
+            }
+            myWidget.open(); // Abre a janela de seleção de arquivo
+        });
+    </script>
+</body>
+</html>
